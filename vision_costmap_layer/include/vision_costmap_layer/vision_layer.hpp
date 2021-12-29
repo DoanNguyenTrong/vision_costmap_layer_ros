@@ -1,10 +1,24 @@
 #pragma once
 
+#include    <memory>
+#include    <mutex>
+#include    <string>
+#include    <vector>
+
+#include    <XmlRpcValue.h>
+
 #include    <ros/ros.h>
 #include    <costmap_2d/layered_costmap.h>
 #include    <costmap_2d/layer.h>
+#include    <costmap_2d/costmap_2d.h>
+
 #include    <costmap_2d/GenericPluginConfig.h>
 #include    <dynamic_reconfigure/server.h>
+
+#include    <custom_msgs/Obstacles.h>
+#include    <custom_msgs/Zone.h>
+
+
 
 namespace vision_layer{
 
