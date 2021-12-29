@@ -113,9 +113,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES vision_costmap_layer
-#  CATKIN_DEPENDS base_local_planner costmap_2d dynamic_reconfigure geometry_msgs message_generation move_base nav_msgs pluginlib roscpp rospy std_msgs tf visualization_msgs
+ INCLUDE_DIRS include
+ LIBRARIES vision_costmap_layer
+ CATKIN_DEPENDS base_local_planner costmap_2d dynamic_reconfigure geometry_msgs move_base nav_msgs pluginlib roscpp rospy std_msgs tf visualization_msgs
 #  DEPENDS system_lib
 )
 

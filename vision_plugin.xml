@@ -1,5 +1,0 @@
-<library path="lib/libvision_layer">
-  <class type="vision_layer::VisionLayer" base_class_type="costmap_2d::Layer">
-    <description>Vision Layer that adds obstacle detected by object detection.</description>
-  </class>
-</library>

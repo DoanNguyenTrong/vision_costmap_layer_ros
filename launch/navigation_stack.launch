@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="sim"                default="false"/>
+  <arg name="use_global_map"     default="false"/>
+  <arg name="run_traversability" default="false"/>
+  <arg name="follow_waypoints"   default="false"/>
+  
+
+  <arg name="global_frame"       default="odom"/>
+  <arg name="robot_base_frame"   default="base_link"/>
+  
+  <arg name="odom_topic"         default="/control/odometry/gps" if="$(arg sim)"/>
+  <arg name="odom_topic"         default="/odometry/gps" unless="$(arg sim)"/>
+  
+  <arg name="global_planner"             default="ompl" doc="ompl, global, continuous"/>
+  <arg name="local_planner"             default="teb" doc="teb, dwa, mpc"/>
+  
+  <!-- TODO Set right map -->
+  <arg name="global_map"         default="$(find vision_costmap_layer)/map/map.yaml"/>
+  
+  <!-- Mapping -->
+  <include file="$(find vision_costmap_layer)/launch/point_cloud_to_scan.launch"/>
+  
+  <!-- Robot self-filtering and ground removal -->
+  <include file="$(find vision_costmap_layer)/launch/filter_pointcloud_ground.launch">
+    <arg name="sim"        value="$(arg sim)"/>
+  </include>
+
+
+
+  <!-- Move base -->
+  <include file="$(find vision_costmap_layer)/launch/move_base.launch">
+    <arg name="global_frame"      value="$(arg global_frame)"/>
+    <arg name="robot_base_frame"  value="$(arg robot_base_frame)"/>
+    <arg name="odom_topic"        value="$(arg odom_topic)"/>
+    
+    <arg name="sim"               value="$(arg sim)"/>
+    <arg name="use_global_map"    value="$(arg use_global_map)"/>
+    
+    <arg name="local_planner"     value="$(arg local_planner)"/>
+    <arg name="global_planner"     value="$(arg global_planner)"/>
+
+  </include>
+
+  
+  <!-- Run the map server -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg global_map)" if="$(arg use_global_map)">
+    <param name="frame_id" value="$(arg global_frame)"/>
+  </node>
+
+  <!-- Rivz visualization -->
+  <node name="rviz" pkg="rviz" type="rviz" 
+    args="-d $(find vision_costmap_layer)/rviz/movebase.rviz"
+    output="screen"/>
+
+  <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 50" /> -->
+
+</launch> 

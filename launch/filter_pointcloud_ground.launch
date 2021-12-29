@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="sim"        default="false"/>
+
+  <node pkg="smb_navigation_scripts" type="filter_pcl_node" name="filter_pointcloud_ground" output="screen" required="true" >
+    <param name="ground_removal_th" value="-0.25"/>
+    <param name="clear_radius"      value="0.25"/>
+    
+    <!-- Remapping -->
+    <remap from="rslidar_points"          to="velodyne_points" unless="$(arg sim)"/>
+    <remap from="rslidar_points_filtered" to="velodyne_points_filtered"  unless="$(arg sim)"/>
+  </node>
+</launch>
