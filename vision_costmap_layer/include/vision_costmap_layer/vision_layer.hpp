@@ -19,20 +19,37 @@
 #include    <custom_msgs/Zone.h>
 
 
+#include    "vision_costmap_layer/VisionLayerConfig.h"
+
 
 namespace vision_layer{
+
+struct PointInt2D{
+    int x;
+    int y;
+};
+
 
 // Define VisionLayer
 class VisionLayer: public costmap_2d::Layer, public costmap_2d::Costmap2D{
 public:
+    // Define
+    using Polygon = std::vector<geometry_msgs::Point>;
+    
     // Constructor
     VisionLayer();
+    virtual ~VisionLayer();
+
+
     virtual void onInitialize();
+    
     // @brief Define the area that will need to be update. 
     //        Calculate the point (mark_x_, mark_y_) then expand the min/max bounds to assure it includes the new point.
     virtual void updateBounds(  double , double , double , 
                                 double *, double *, 
                                 double *, double *);
+    
+    
     // @brief Calculate which grid cell our point is in using worldToMap.
     //        Then set the cost of that cell.
     virtual void updateCosts(costmap_2d::Costmap2D &, 
