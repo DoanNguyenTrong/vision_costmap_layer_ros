@@ -24,7 +24,7 @@ point_cloud_sensor: {sensor_frame: rslidar, data_type: PointCloud2, topic: /rsli
 inflation_layer:
   enabled:              true
   cost_scaling_factor:  1  
-  inflation_radius:     0.8
+  inflation_radius:     0.3
 
 vision_layer:
   enabled:              true

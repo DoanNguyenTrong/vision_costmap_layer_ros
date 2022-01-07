@@ -34,7 +34,7 @@ TebLocalPlannerROS:
   wheelbase: 0.625
   min_turning_radius: 1.0
   footprint_model: # types: "point", "circular", "two_circles", "line", "polygon"
-    type: "circular"
+    type: "polygon"
     radius: 0.75 # for type "circular"
     line_start: [-0.3, 0.0] # for type "line"
     line_end: [0.3, 0.0] # for type "line"
