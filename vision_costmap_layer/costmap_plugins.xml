@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="lib/libvision_layer">
+    <class type="vision_costmap_layer::VisionLayer" base_class_type="costmap_2d::Layer">
+      <description>ROS-Package that implements a costmap layer to add vision obstacles and to define navigation zone </description>
+    </class>
+  </library>
+</class_libraries>

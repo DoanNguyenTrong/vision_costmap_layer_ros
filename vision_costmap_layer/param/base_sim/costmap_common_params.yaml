@@ -13,8 +13,8 @@ publish_voxel_map: false
 
 footprint: [[0.33, 0.43], [-0.33, 0.43], [-0.33, -0.43], [0.33, -0.43], [0.45, 0]]
 footprint_padding: 0.2
-
-cost_scaling_factor: 1 # slope of the cost decay curve with respect to distance from the object. lower makes robot stay further from obstacles
+# inflation_radius: 0.3  # controls how far away the zero cost point is from the obstacle
+# cost_scaling_factor: 1 # slope of the cost decay curve with respect to distance from the object. lower makes robot stay further from obstacles
 
 observation_sources: laser_scan_sensor point_cloud_sensor
 laser_scan_sensor: {sensor_frame: rslidar, data_type: LaserScan, topic: scan, marking: true, clearing: true}
@@ -23,20 +23,16 @@ point_cloud_sensor: {sensor_frame: rslidar, data_type: PointCloud2, topic: /rsli
 
 inflation_layer:
   enabled:              true
-  cost_scaling_factor:  5.0  
-  inflation_radius:     0.3 # controls how far away the zero cost point is from the obstacle
-
-static_layer:
-  enabled:              false
-  map_topic:            /map
+  cost_scaling_factor:  1  
+  inflation_radius:     0.8
 
 vision_layer:
   enabled:              true
   zone_topics:          [/vision_costmap_layer/zone]
   obstacle_topics:      [/vision_costmap_layer/obsctacles]
-  one_zone:             true     
-  forms:    
-     - [0.4, 0.0]
-     - [[0.4, 0.0]]
-     - [[-0.4, 0.0],[0.0, 0.4]]
-     - [[5, 5],[-5, 5],[-5, -5],[5, -5]]
+#   one_zone:             true
+#   forms:    
+#     - [0.4, 0.0]
+#     - [[0.4, 0.0]]
+#     - [[-0.4, 0.0],[0.0, 0.4]]
+#     - [[5, 5],[-5, 5],[-5, -5],[5, -5]]

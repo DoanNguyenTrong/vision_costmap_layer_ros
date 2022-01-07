@@ -7,3 +7,7 @@ global_costmap:
   height: 50.0
   # static_map: false
   rolling_window: true
+  # plugins:
+    # - { name: inflation_layer, type: "costmap_2d::InflationLayer" }
+    # - { name: obstacle_layer, type: "costmap_2d::ObstacleLayer"}
+    # - { name: vision_layer, type: "vision_costmap_layer::VisionLayer" }

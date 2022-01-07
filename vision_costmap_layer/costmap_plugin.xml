@@ -1,7 +1,0 @@
-<!-- name of the lib should be similar to package name -->
-<library path="lib/libvision_costmap_layer">
-<!-- name of class type is what you defined namespace & class -->
-  <class type="vision_layer::VisionLayer" base_class_type="costmap_2d::Layer">
-    <description>ROS-Package that implements a costmap layer to add virtual obstacles and to define navigation zone </description>
-  </class>
-</library>

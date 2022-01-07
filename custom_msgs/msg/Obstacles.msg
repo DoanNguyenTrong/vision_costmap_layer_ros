@@ -1,1 +1,1 @@
-custom_msgs/Form[] obstacles
+custom_msgs/Form[] list

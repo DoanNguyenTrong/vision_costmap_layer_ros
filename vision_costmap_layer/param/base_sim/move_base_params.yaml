@@ -10,4 +10,4 @@ oscillation_timeout: 0.0
 oscillation_distance: 0.5
 
 recovery_behavior_enabled: true
-clearing_rotation_allowed: true
+# clearing_rotation_allowed: true
