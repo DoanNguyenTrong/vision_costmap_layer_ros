@@ -22,12 +22,6 @@
 #include <custom_msgs/Obstacles.h>
 #include <custom_msgs/Zone.h>
 
-// #include <geometry_msgs/PoseStamped.h>
-
-// #include <stdlib.h>
-// #include <tf/transform_datatypes.h>
-
-// #include <unordered_map>
 
 namespace vision_costmap_layer {
 
@@ -100,12 +94,7 @@ private:
     /// \brief             reads the topic names in YAML-Format from the ROS parameter server in the namespace of this plugin
     /// \param nh          rosnode handle
     /// \param param       name of the YAML parameter where the topic names are saved
-    void parseTopicsFromYaml(ros::NodeHandle &nh, const std::string &param);
-
-    /// \brief             reads the forms in YAML-Format from the ROS parameter server in the namespace of this plugin
-    /// \param nh          rosnode handle
-    /// \param param       name of the YAML format parameter where the forms are saved
-    void parseFormListFromYaml(const ros::NodeHandle &nh, const std::string &param);
+    void topicConfigure(ros::NodeHandle &nh, const std::string &param);
 
     /// \brief             convert to geometry_msgs::Point a YAML-Array. z-coordinate is set to zero
     /// \param val         YAML-array with to point-coordinates (x and y)
@@ -129,15 +118,16 @@ private:
     geometry_msgs::Point getRobotPoint();
 
     std::shared_ptr<dynamic_reconfigure::Server<VisionLayerConfig>> _dsrv; // dynamic_reconfigure server for the costmap
-    std::mutex _data_mutex;                                                 // mutex for the accessing forms
-    double _costmap_resolution;                                             // resolution of the overlayed costmap to create the thinnest line out of two points
-    bool _one_zone_mode, _clear_obstacles;                                  // put in memory previous zones and obstacles if false
-    std::string _base_frame;                                                // base frame of the robot by default "base_link"
-    std::string _map_frame;                                                 // map frame by default "map"
-    std::vector<geometry_msgs::Point> _obstacle_points;                     // vector to save the obstacle points in source coordinates
-    std::vector<Polygon> _zone_polygons;                                    // vector to save the zone polygons (more than 3 edges) in source coordinates
-    std::vector<Polygon> _obstacle_polygons;                                // vector to save the obstacle polygons (including lines) in source coordinates
-    std::vector<Polygon> _form_polygons;                                    // vector to save the form polygons (including lines) in source coordinates
+    std::mutex                              _data_mutex;                                                 // mutex for the accessing forms
+    double                                  _costmap_resolution;                                             // resolution of the overlayed costmap to create the thinnest line out of two points
+    bool                                    _one_zone_mode, 
+                                            _clear_obstacles;                                  // put in memory previous zones and obstacles if false
+    std::string                             _base_frame,
+                                            _map_frame;                                                 // map frame by default "map"
+    std::vector<geometry_msgs::Point>       _obstacle_points;                     // vector to save the obstacle points in source coordinates
+    std::vector<Polygon>                    _zone_polygons;                                    // vector to save the zone polygons (more than 3 edges) in source coordinates
+    std::vector<Polygon>                    _obstacle_polygons;                                // vector to save the obstacle polygons (including lines) in source coordinates
+    std::vector<Polygon>                    _form_polygons;                                    // vector to save the form polygons (including lines) in source coordinates
     std::vector<geometry_msgs::Point> _form_points;                         // vector to save the form points in source coordinates
 
     double _min_x, _min_y, _max_x, _max_y; // cached map bounds

@@ -34,7 +34,7 @@ TebLocalPlannerROS:
   wheelbase: 0.625
   min_turning_radius: 1.0
   footprint_model: # types: "point", "circular", "two_circles", "line", "polygon"
-    type: "polygon"
+    type: "circular"
     radius: 0.75 # for type "circular"
     line_start: [-0.3, 0.0] # for type "line"
     line_end: [0.3, 0.0] # for type "line"
@@ -51,8 +51,8 @@ TebLocalPlannerROS:
   complete_global_plan: false
 
   # Obstacles
-  min_obstacle_dist: 0.8
-  inflation_dist: 0.8
+  min_obstacle_dist: 0.3
+  inflation_dist: 0.4
   include_costmap_obstacles: True
   costmap_obstacles_behind_robot_dist: 3.0
   obstacle_poses_affected: 50

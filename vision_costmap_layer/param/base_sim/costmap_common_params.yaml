@@ -29,7 +29,7 @@ inflation_layer:
 vision_layer:
   enabled:              true
   zone_topics:          [/vision_costmap_layer/zone]
-  obstacle_topics:      [/vision_costmap_layer/obsctacles]
+  obstacle_topics:      [/vision_costmap_layer/obstacles]
 #   one_zone:             true
 #   forms:    
 #     - [0.4, 0.0]

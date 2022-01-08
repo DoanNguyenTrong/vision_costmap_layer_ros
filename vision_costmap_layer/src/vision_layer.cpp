@@ -1,4 +1,3 @@
-#include "vision_costmap_layer/vision_layer.hpp"
 
 #include <geometry_msgs/Pose.h>
 #include <pluginlib/class_list_macros.h>
@@ -6,19 +5,20 @@
 
 #include <XmlRpcException.h>
 
+#include "vision_costmap_layer/vision_layer.hpp"
+
+
 PLUGINLIB_EXPORT_CLASS(vision_costmap_layer::VisionLayer, costmap_2d::Layer);
 
 static const std::string tag {"[Vision-LAYER] "};
 
 namespace vision_costmap_layer {
 
-// ---------------------------------------------------------------------
 
 VisionLayer::VisionLayer() :
     _dsrv(nullptr)
 {}
 
-// ---------------------------------------------------------------------
 
 VisionLayer::~VisionLayer()
 {
@@ -27,20 +27,19 @@ VisionLayer::~VisionLayer()
     }
 }
 
-// ---------------------------------------------------------------------
 
 void VisionLayer::onInitialize()
 {
     ros::NodeHandle nh("~/" + name_);
     current_ = true;
 
-    _base_frame = "base_link";
-    _map_frame = "odom";
-    _one_zone_mode = true;
-    _clear_obstacles = true;
+    nh.param<std::string>("base_link", _base_frame, "base_link");
+    nh.param<std::string>("global_frame", _map_frame, "odom");
+    nh.param("one_zone", _one_zone_mode, true);
+    nh.param("clear_obstacle", _clear_obstacles, true);
 
+    // Dynamic reconfiguration
     _dsrv = std::make_shared<dynamic_reconfigure::Server<VisionLayerConfig>>(nh);
-
     dynamic_reconfigure::Server<VisionLayerConfig>::CallbackType cb = boost::bind(&VisionLayer::reconfigureCb, this, _1, _2);
     _dsrv->setCallback(cb);
 
@@ -52,51 +51,51 @@ void VisionLayer::onInitialize()
 
     // reading the defined topics out of the namespace of this plugin!
     std::string param {"zone_topics"};
-    parseTopicsFromYaml(nh, param);
+    topicConfigure(nh, param);
     param = "obstacle_topics";
-    parseTopicsFromYaml(nh, param);
-
-    // reading the defined forms out of the namespace of this plugin!
-    param = "forms";
-    parseFormListFromYaml(nh, param);
+    topicConfigure(nh, param);
 
     // compute map bounds for the current set of areas and obstacles.
     computeMapBounds();
-
-    ROS_INFO_STREAM(tag << "layer is initialized: [points: " << _form_points.size() << "] [polygons: " << _form_polygons.size() << "]");
 }
 
-// ---------------------------------------------------------------------
 
-void VisionLayer::parseTopicsFromYaml(ros::NodeHandle &nh, const std::string &param)
+void VisionLayer::topicConfigure(ros::NodeHandle &nh, const std::string &param)
 {
     XmlRpc::XmlRpcValue param_yaml;
+
     if (nh.getParam(param, param_yaml)) {
+        // Valid & Array of string
         if ((param_yaml.valid() == false) || (param_yaml.getType() != XmlRpc::XmlRpcValue::TypeArray)) {
-            ROS_ERROR_STREAM(tag << "invalid topic names list: it must be a non-empty list of strings");
-            throw std::runtime_error("invalid topic names list: it must be a non-empty list of strings");
+            ROS_ERROR_STREAM(tag << "invalid list of topic names. Must be a non-empty list of strings");
+            throw std::runtime_error("invalid list of topic names. Must be a non-empty list of strings");
         }
 
         if (param_yaml.size() == 0) {
-            ROS_WARN_STREAM(tag << "empty topic names list: Vision layer will have no effect on costmap");
+            ROS_WARN_STREAM(tag << "Empty list of topic names. Ignoring " << param);
         }
 
+        // Loop through all strings and find params
         for (std::size_t i = 0; i < param_yaml.size(); ++i) {
             if (param_yaml[i].getType() != XmlRpc::XmlRpcValue::TypeString) {
-                ROS_WARN_STREAM(tag << "invalid topic names list: element " << i << " is not a string, so it will be ignored");
+                ROS_WARN_STREAM(tag << param_yaml[i] << " is not a string! Ignored");
             } else {
                 std::string topic_name(param_yaml[i]);
-                if ((topic_name.empty()) && (topic_name.at(0) != '/')) {
+                
+                if ((!topic_name.empty()) && (topic_name.at(0) != '/')) {
                     topic_name = "/" + topic_name;
                 }
 
                 if (param.compare("zone_topics") == 0) {
                     _subs.push_back(nh.subscribe(topic_name, 100, &VisionLayer::zoneCallback, this));
+                    ROS_INFO_STREAM(tag << "subscribed to topic " << _subs.back().getTopic().c_str());
                 } else if (param.compare("obstacle_topics") == 0) {
                     _subs.push_back(nh.subscribe(topic_name, 100, &VisionLayer::obstaclesCallback, this));
+                    ROS_INFO_STREAM(tag << "subscribed to topic " << _subs.back().getTopic().c_str());
+                } else{
+                    ROS_WARN_STREAM(tag << "Unuse param for querry " << param << ": " << topic_name);
                 }
 
-                ROS_INFO_STREAM(tag << "subscribed to topic " << _subs.back().getTopic().c_str());
             }
         }
     } else {
@@ -104,129 +103,6 @@ void VisionLayer::parseTopicsFromYaml(ros::NodeHandle &nh, const std::string &pa
     }
 }
 
-// ---------------------------------------------------------------------
-
-// load polygones, lines and points out of the rosparam server
-void VisionLayer::parseFormListFromYaml(const ros::NodeHandle &nh, const std::string &param)
-{
-    XmlRpc::XmlRpcValue param_yaml;
-    if (nh.getParam(param, param_yaml)) {
-        if (param_yaml.getType() == XmlRpc::XmlRpcValue::TypeArray) {
-
-            for (std::size_t i = 0; i < param_yaml.size(); ++i) {
-                geometry_msgs::Point point;
-                Polygon vector_to_add;
-                if (param_yaml[i].getType() == XmlRpc::XmlRpcValue::TypeArray) {
-                    if (param_yaml[i].size() == 1) { // add a point
-                        try {
-                            convert(param_yaml[i][0], point);
-                        } catch (...) {
-                            continue;
-                        }
-                        _form_points.push_back(point);
-                    } else if (param_yaml[i].size() == 2) {
-                        if (param_yaml[i][0].getType() == XmlRpc::XmlRpcValue::TypeDouble ||
-                            param_yaml[i][0].getType() == XmlRpc::XmlRpcValue::TypeInt) { // add a point
-                            try {
-                                convert(param_yaml[i], point);
-                            } catch (...) {
-                                continue;
-                            }
-                            _form_points.push_back(point);
-                        } else { // add a line
-                            vector_to_add.reserve(3);
-                            geometry_msgs::Point a;
-                            geometry_msgs::Point b;
-                            try {
-                                convert(param_yaml[i][0], a);
-                                convert(param_yaml[i][1], b);
-                            } catch (...) {
-                                continue;
-                            }
-                            vector_to_add.push_back(a);
-                            vector_to_add.push_back(b);
-
-                            // calculate the normal vector for AB
-                            geometry_msgs::Point n;
-                            n.x = b.y - a.y;
-                            n.y = a.x - b.x;
-                            // get the absolute value of N to normalize it and to set the length of the costmap resolution
-                            double abs_n = sqrt(pow(n.x, 2) + pow(n.y, 2));
-                            n.x = n.x / abs_n * _costmap_resolution;
-                            n.y = n.y / abs_n * _costmap_resolution;
-
-                            // calculate the new points to get a polygon which can be filled
-                            point.x = a.x + n.x;
-                            point.y = a.y + n.y;
-                            vector_to_add.push_back(point);
-
-                            point.x = b.x + n.x;
-                            point.y = b.y + n.y;
-                            vector_to_add.push_back(point);
-
-                            _form_polygons.push_back(vector_to_add);
-                        }
-                    } else if (param_yaml[i].size() >= 3) { // add a polygon
-                        vector_to_add.reserve(param_yaml[i].size());
-                        for (std::size_t j = 0; j < param_yaml[i].size(); ++j) {
-                            try {
-                                convert(param_yaml[i][j], point);
-                            } catch (...) {
-                                vector_to_add.clear();
-                                break;
-                            }
-                            vector_to_add.push_back(point);
-                        }
-                        if (!vector_to_add.empty()) {
-                            _form_polygons.push_back(vector_to_add);
-                        }
-                    }
-                } else {
-                    ROS_ERROR_STREAM(tag << param << " with index #" << i << " is corrupted");
-                }
-            }
-
-        } else {
-            ROS_ERROR_STREAM(tag << param << "struct is corrupted");
-        }
-
-    } else {
-        ROS_ERROR_STREAM(tag << "could not read " << param << " from parameter server");
-    }
-}
-
-// ---------------------------------------------------------------------
-
-// get a point out of the XML Type into a geometry_msgs::Point
-void VisionLayer::convert(const XmlRpc::XmlRpcValue &val, geometry_msgs::Point &point)
-{
-    try {
-        // check if there a two values for the coordinate
-        if (val.getType() == XmlRpc::XmlRpcValue::TypeArray && val.size() == 2) {
-            auto convDouble = [](const XmlRpc::XmlRpcValue &val) -> double {
-                auto val_copy = val;
-                if (val_copy.getType() == XmlRpc::XmlRpcValue::TypeInt) // XmlRpc cannot cast int to double
-                {
-
-                    return int(val_copy);
-                }
-                return val_copy; // if not double, an exception is thrown;
-            };
-
-            point.x = convDouble(val[0]);
-            point.y = convDouble(val[1]);
-            point.z = 0.0;
-        } else {
-            ROS_ERROR_STREAM(tag << "a point has to contain two double values");
-            throw std::runtime_error("a point has to contain two double values");
-        }
-    } catch (const XmlRpc::XmlRpcException &ex) {
-        ROS_ERROR_STREAM(tag << "could not convert point: [" << ex.getMessage() << "]");
-        throw std::runtime_error("could not convert point: [" + ex.getMessage() + "]");
-    }
-}
-
-// ---------------------------------------------------------------------
 
 bool VisionLayer::robotInZone(const Polygon &zone)
 {
@@ -250,7 +126,6 @@ bool VisionLayer::robotInZone(const Polygon &zone)
     return result;
 }
 
-// ---------------------------------------------------------------------
 
 void VisionLayer::reconfigureCb(VisionLayerConfig &config, uint32_t level)
 {
@@ -260,6 +135,7 @@ void VisionLayer::reconfigureCb(VisionLayerConfig &config, uint32_t level)
     _base_frame = config.base_frame;
     _map_frame = config.map_frame;
 }
+
 
 void VisionLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
                                 double *min_x, double *min_y, double *max_x, double *max_y)
@@ -279,6 +155,7 @@ void VisionLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
     *max_x = std::max(*max_x, _max_x);
     *max_y = std::max(*max_y, _max_y);
 }
+
 
 void VisionLayer::updateCosts(costmap_2d::Costmap2D &master_grid, int min_i, int min_j, int max_i, int max_j)
 {
@@ -307,6 +184,7 @@ void VisionLayer::updateCosts(costmap_2d::Costmap2D &master_grid, int min_i, int
         }
     }
 }
+
 
 void VisionLayer::computeMapBounds()
 {
@@ -378,6 +256,7 @@ void VisionLayer::setPolygonCost(costmap_2d::Costmap2D &master_grid, const Polyg
     }
 }
 
+
 void VisionLayer::polygonOutlineCells(const std::vector<PointInt> &polygon, std::vector<PointInt> &polygon_cells)
 {
     for (unsigned int i = 0; i < polygon.size() - 1; ++i) {
@@ -389,6 +268,7 @@ void VisionLayer::polygonOutlineCells(const std::vector<PointInt> &polygon, std:
         raytrace(polygon[last_index].x, polygon[last_index].y, polygon[0].x, polygon[0].y, polygon_cells);
     }
 }
+
 
 void VisionLayer::raytrace(int x0, int y0, int x1, int y1, std::vector<PointInt> &cells)
 {
@@ -416,6 +296,7 @@ void VisionLayer::raytrace(int x0, int y0, int x1, int y1, std::vector<PointInt>
         }
     }
 }
+
 
 void VisionLayer::rasterizePolygon(const std::vector<PointInt> &polygon, std::vector<PointInt> &polygon_cells, bool fill)
 {
@@ -484,6 +365,7 @@ void VisionLayer::rasterizePolygon(const std::vector<PointInt> &polygon, std::ve
     }
 }
 
+
 void VisionLayer::zoneCallback(const custom_msgs::ZoneConstPtr &zone_msg)
 {
     if (zone_msg->area.form.size() > 2) {
@@ -507,6 +389,7 @@ void VisionLayer::zoneCallback(const custom_msgs::ZoneConstPtr &zone_msg)
         ROS_ERROR_STREAM(tag << "A zone Layer needs to be a polygon with minimun 3 edges");
     }
 }
+
 
 void VisionLayer::obstaclesCallback(const custom_msgs::ObstaclesConstPtr &obstacles_msg)
 {
@@ -575,6 +458,7 @@ void VisionLayer::obstaclesCallback(const custom_msgs::ObstaclesConstPtr &obstac
     }
     computeMapBounds();
 }
+
 
 geometry_msgs::Point VisionLayer::getRobotPoint()
 {
