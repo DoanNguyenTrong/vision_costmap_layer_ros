@@ -1,7 +1,3 @@
-////  \file vision_layer.hpp
-////  \author Mahmoud Ghorbel
-////  \date 13 Sep 2016
-
 #pragma once
 
 #include "vision_costmap_layer/VisionLayerConfig.h"

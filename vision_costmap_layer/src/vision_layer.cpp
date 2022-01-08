@@ -1,4 +1,3 @@
-
 #include <geometry_msgs/Pose.h>
 #include <pluginlib/class_list_macros.h>
 #include <tf/transform_listener.h>

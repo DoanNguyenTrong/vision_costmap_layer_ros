@@ -4,9 +4,6 @@ project(vision_costmap_layer LANGUAGES C CXX VERSION ${version})
 set(CMAKE_CXX_STANDARD 14)
 set(CXX_STANDARD_REQUIRED ON)
 
-# ##############################################################################
-# Load and setup packages
-
 find_package(catkin
              REQUIRED
              roscpp
@@ -15,11 +12,9 @@ find_package(catkin
              custom_msgs
              tf)
 
-# ##############################################################################
 # Generate messages and configurations
 generate_dynamic_reconfigure_options(cfg/VisionLayer.cfg)
 
-# ##############################################################################
 # Setup catkin packages
 catkin_package(INCLUDE_DIRS
                include
@@ -32,7 +27,6 @@ catkin_package(INCLUDE_DIRS
                tf
                DEPENDS)
 
-# ##############################################################################
 # Generate library
 include_directories(include ${catkin_INCLUDE_DIRS})
 add_library(vision_layer src/vision_layer.cpp)
